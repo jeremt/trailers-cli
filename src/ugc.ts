@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { fetchMovieTrailer, searchMovies } from "./tmdb";
 
 export type Theater = { name: string; href: string };
 
@@ -67,15 +68,28 @@ export async function getTodaySessions(pageRoute: `${string}.html`) {
   return sessionsByFilm;
 }
 
-(async () => {
+async function main() {
   //   console.log(await getTheaters());
   const sessions = await getTodaySessions("cinema-ugc-cine-cite-bercy.html");
   for (const film of Object.keys(sessions)) {
-    console.log(`\n${film}`);
+    const movie = await searchMovies(film, 1);
+    const trailer =
+      movie.length > 0
+        ? (await fetchMovieTrailer(movie[0].id)) ?? "No trailer"
+        : "No trailer";
+    console.log(
+      `\n${movie[0].title ? movie[0].title : film} ${
+        trailer.startsWith("https") ? `\x1b[34m${trailer}\x1b[0m` : trailer
+      }`
+    );
     for (const session of sessions[film]) {
       console.log(
         `  \x1b[30m${session.hour} ${session.hourEnd} - ${session.lang} - ${session.room}\x1b[0m`
       );
     }
   }
-})();
+}
+
+if (require.main === module) {
+  main();
+}
